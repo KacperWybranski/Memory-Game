@@ -21,42 +21,67 @@ class ViewController: UIViewController {
     var pairsToFind: Int = 0 {
         didSet {
             if pairsToFind == 0 {
-                endGame()
+                currentLvl += 1
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                    self?.setupLevel()
+                }
             }
         }
     }
     @IBOutlet var playButton: UIButton!
+    var currentLvl: Int = 1
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        currentLvl = 1
         view.layer.backgroundColor = CGColor(red: 0, green: 0.2, blue: 0.3, alpha: 1.0)
-    }
-    
-    func startGame() {
-        setupLevel(1)
     }
 
     @IBAction func playTppd(_ sender: Any) {
         UIView.animate(withDuration: 0.2, animations: { [weak self] in
             self?.playButton.alpha = 0.0
         })
-        startGame()
+        
+        setupLevel()
     }
     
-    func setupLevel(_ lvl: Int) {
+    func setupLevel() {
+        cardsButtons.removeAll()
+        
+        if currentLvl > 4 {
+            endGame()
+            return
+        }
+        
         let midX: Int = Int(view.frame.midX)
         let midY: Int = Int(view.frame.midY)
-        let horSpacing: Int = 40
+        let spacing: Int = 30
         let cardW = 150
-        colors = [.magenta, .magenta, .green, .green, .green, .green]
-        pairsToFind = lvl*2
+        let cardH = 200
+        colors = [.magenta, .magenta, .green, .green, .blue, .blue, .brown, .brown, .cyan, .cyan, .orange, .orange, .gray, .gray, .purple, .purple]
+        pairsToFind = currentLvl*2
         
-        for i in 1...4 {
-//            let x = midX + horSpacing*(-2.5+CGFloat(i)) + cardW*(-3+CGFloat(i))
-            let x: Int = midX + horSpacing*(-5+2*i)/2 + cardW*(-3+i)
-            let randomColor = colors.remove(at: Int.random(in: 0...4-i))
-            createButton(frame: CGRect(x: x, y: midY-100, width: cardW, height: 200), color: randomColor, number: i)
+        for u in 1...currentLvl {
+            let y: Int
+            
+            switch currentLvl {
+            case 2:
+                y = midY + cardH * (-2+u) + spacing * (2*u - 3)/2
+            case 3:
+                y = midY + cardH * (-5+2*u)/2 + spacing * (u - 2)
+            case 4:
+                y = midY + cardH * (-3+u) + spacing * (2*u - 5)/2
+            default:
+                y = midY - cardH/2
+            }
+            
+            for i in 1...4 {
+                let x: Int = midX + spacing*(-5+2*i)/2 + cardW*(-3+i)
+                let randomColor = colors.remove(at: Int.random(in: 0...currentLvl*4-((u-1)*4)-i))
+                createButton(frame: CGRect(x: x, y: y, width: cardW, height: cardH), color: randomColor, number: i)
+            }
         }
         
         UIView.animate(withDuration: 0.5, delay: 0.5, options: [], animations: {
@@ -176,6 +201,25 @@ class ViewController: UIViewController {
         playButton.setTitle("PLAY AGAIN", for: .normal)
         UIView.animate(withDuration: 0.5, delay: 1.5, options: [], animations: { [weak self] in
             self?.playButton.alpha = 1.0
+        })
+        
+        let endLabel = UILabel(frame: CGRect(x: view.frame.midX-300, y: view.frame.height*0.25, width: 600, height: 200))
+        endLabel.text = "Nice!"
+        endLabel.textColor = UIColor(white: 1.0, alpha: 0.8)
+        endLabel.font = UIFont(name: "Verdana", size: 75)
+        endLabel.textAlignment = .center
+        view.addSubview(endLabel)
+        endLabel.alpha = 0.0
+
+//        UIView.animate(withDuration: 0.2, delay: 0.5, options: [], animations: {
+//            endLabel.alpha = 1.0
+//        })
+        UIView.animate(withDuration: 0.3, delay: 0.5, options: [], animations: {
+            endLabel.alpha = 1.0
+        }, completion: { _ in
+            UIView.animate(withDuration: 0.5, delay: 1.2, options: [], animations: {
+                endLabel.alpha = 0.0
+            })
         })
     }
     
